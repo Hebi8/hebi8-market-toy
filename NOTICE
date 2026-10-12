@@ -1,0 +1,17 @@
+hebi8 外汇回放 (hebi8-toy) — a Bilibili Toy
+
+Market data
+  The one-minute bars in public/data/ are historical bid quotes of USD/JPY,
+  EUR/JPY and AUD/JPY taken from the free "Generic ASCII, M1" files of
+  HistData.com (https://www.histdata.com/), years 2008, 2011, 2013, 2015,
+  2016, 2019, 2020, 2022 and 2024, downloaded 2026-10-12/13.
+  Only the windows listed in scripts/scenarios.mjs are kept. Prices are
+  unchanged; timestamps are converted to UTC (see scripts/histdata.mjs) and
+  one hour that the files repeat on a clock-change Sunday is dropped. Nothing
+  is interpolated or synthesised: a minute without a quote is simply absent.
+  HistData.com provides the data without any warranty.
+
+Chart library
+  KLineChart (klinecharts) is bundled into app.js.
+  Copyright (c) 2019 lihu. Licensed under the Apache License 2.0; its licence
+  and notice ship as LICENSE-klinecharts.txt and NOTICE-klinecharts.txt.

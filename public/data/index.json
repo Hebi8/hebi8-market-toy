@@ -1,0 +1,575 @@
+{
+ "source": "HistData.com",
+ "granularity": 1,
+ "pairs": [
+  "USDJPY",
+  "EURJPY",
+  "AUDJPY"
+ ],
+ "scenarios": [
+  {
+   "id": "2008-10-24-lehman",
+   "date": "2008-10-24",
+   "title": "雷曼之后的日元暴涨",
+   "blurb": "金融危机里套息交易集中平仓，日元对各货币全线急升，澳元兑日元一天的振幅超过一成。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2008-10-24-lehman.USDJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1224820800,
+     "to": 1224856800,
+     "open": 96.17,
+     "high": 96.21,
+     "low": 90.92,
+     "close": 93,
+     "range": 5.29,
+     "rangePct": 5.5
+    },
+    "EURJPY": {
+     "file": "2008-10-24-lehman.EURJPY.json",
+     "bars": 2039,
+     "context": 1439,
+     "from": 1224820800,
+     "to": 1224856800,
+     "open": 122.75,
+     "high": 123.25,
+     "low": 113.8,
+     "close": 118.29,
+     "range": 9.45,
+     "rangePct": 7.7
+    },
+    "AUDJPY": {
+     "file": "2008-10-24-lehman.AUDJPY.json",
+     "bars": 2037,
+     "context": 1438,
+     "from": 1224820800,
+     "to": 1224856800,
+     "open": 62.9,
+     "high": 63.03,
+     "low": 55.08,
+     "close": 57.82,
+     "range": 7.95,
+     "rangePct": 12.64
+    }
+   }
+  },
+  {
+   "id": "2011-03-17-record-high",
+   "date": "2011-03-17",
+   "title": "震后日元创战后新高",
+   "blurb": "东日本大地震后第六天，纽约收盘后的清淡时段里，美元兑日元一个小时跌掉三日元多，跌破 1995 年的纪录低点。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2011-03-17-record-high.USDJPY.json",
+     "bars": 1907,
+     "context": 1313,
+     "from": 1300291200,
+     "to": 1300327200,
+     "open": 80.17,
+     "high": 80.28,
+     "low": 76.49,
+     "close": 79.53,
+     "range": 3.79,
+     "rangePct": 4.73
+    },
+    "EURJPY": {
+     "file": "2011-03-17-record-high.EURJPY.json",
+     "bars": 2019,
+     "context": 1425,
+     "from": 1300291200,
+     "to": 1300327200,
+     "open": 111.6,
+     "high": 111.8,
+     "low": 107.07,
+     "close": 110.67,
+     "range": 4.73,
+     "rangePct": 4.24
+    },
+    "AUDJPY": {
+     "file": "2011-03-17-record-high.AUDJPY.json",
+     "bars": 2032,
+     "context": 1436,
+     "from": 1300291200,
+     "to": 1300327200,
+     "open": 78.86,
+     "high": 79.17,
+     "low": 74.59,
+     "close": 78.02,
+     "range": 4.58,
+     "rangePct": 5.81
+    }
+   }
+  },
+  {
+   "id": "2011-10-31-intervention",
+   "date": "2011-10-31",
+   "title": "日本单独干预",
+   "blurb": "美元兑日元刚创下 75 日元附近的纪录低点，日本财务省入市抛售日元，几分钟内拉升两日元。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2011-10-31-intervention.USDJPY.json",
+     "bars": 1281,
+     "context": 864,
+     "from": 1320012000,
+     "to": 1320048000,
+     "open": 75.69,
+     "high": 79.52,
+     "low": 75.56,
+     "close": 78.79,
+     "range": 3.96,
+     "rangePct": 5.23
+    },
+    "EURJPY": {
+     "file": "2011-10-31-intervention.EURJPY.json",
+     "bars": 1852,
+     "context": 1276,
+     "from": 1320012000,
+     "to": 1320048000,
+     "open": 107.08,
+     "high": 111.59,
+     "low": 106.99,
+     "close": 110.66,
+     "range": 4.6,
+     "rangePct": 4.3
+    },
+    "AUDJPY": {
+     "file": "2011-10-31-intervention.AUDJPY.json",
+     "bars": 1867,
+     "context": 1289,
+     "from": 1320012000,
+     "to": 1320048000,
+     "open": 81.03,
+     "high": 83.92,
+     "low": 80.7,
+     "close": 83.23,
+     "range": 3.22,
+     "rangePct": 3.97
+    }
+   }
+  },
+  {
+   "id": "2013-04-04-qqe",
+   "date": "2013-04-04",
+   "title": "日银“异次元宽松”",
+   "blurb": "黑田东彦上任后的第一次议息，宣布两年内把基础货币翻倍，日元应声大跌。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2013-04-04-qqe.USDJPY.json",
+     "bars": 2034,
+     "context": 1434,
+     "from": 1365040800,
+     "to": 1365076800,
+     "open": 92.984,
+     "high": 95.675,
+     "low": 92.776,
+     "close": 95.477,
+     "range": 2.899,
+     "rangePct": 3.12
+    },
+    "EURJPY": {
+     "file": "2013-04-04-qqe.EURJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1365040800,
+     "to": 1365076800,
+     "open": 119.423,
+     "high": 122.697,
+     "low": 119.201,
+     "close": 122.323,
+     "range": 3.496,
+     "rangePct": 2.93
+    },
+    "AUDJPY": {
+     "file": "2013-04-04-qqe.AUDJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1365040800,
+     "to": 1365076800,
+     "open": 97.404,
+     "high": 99.652,
+     "low": 97.183,
+     "close": 99.506,
+     "range": 2.469,
+     "rangePct": 2.53
+    }
+   }
+  },
+  {
+   "id": "2015-08-24-flash-crash",
+   "date": "2015-08-24",
+   "title": "全球股市闪崩",
+   "blurb": "中国股市大跌引发全球抛售，美股开盘前美元兑日元两分钟里跌掉两日元多。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2015-08-24-flash-crash.USDJPY.json",
+     "bars": 2416,
+     "context": 1816,
+     "from": 1440399600,
+     "to": 1440435600,
+     "open": 120.958,
+     "high": 121.192,
+     "low": 116.132,
+     "close": 119.183,
+     "range": 5.06,
+     "rangePct": 4.18
+    },
+    "EURJPY": {
+     "file": "2015-08-24-flash-crash.EURJPY.json",
+     "bars": 2414,
+     "context": 1814,
+     "from": 1440399600,
+     "to": 1440435600,
+     "open": 138.683,
+     "high": 138.897,
+     "low": 135.988,
+     "close": 137.403,
+     "range": 2.909,
+     "rangePct": 2.1
+    },
+    "AUDJPY": {
+     "file": "2015-08-24-flash-crash.AUDJPY.json",
+     "bars": 2418,
+     "context": 1818,
+     "from": 1440399600,
+     "to": 1440435600,
+     "open": 87.521,
+     "high": 87.882,
+     "low": 82.026,
+     "close": 86.052,
+     "range": 5.856,
+     "rangePct": 6.69
+    }
+   }
+  },
+  {
+   "id": "2016-06-24-brexit",
+   "date": "2016-06-24",
+   "title": "英国脱欧公投",
+   "blurb": "计票结果一步步倒向脱欧，避险买盘涌入日元，美元兑日元一度跌破 100。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2016-06-24-brexit.USDJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1466715600,
+     "to": 1466751600,
+     "open": 106.141,
+     "high": 106.812,
+     "low": 98.979,
+     "close": 102.228,
+     "range": 7.833,
+     "rangePct": 7.38
+    },
+    "EURJPY": {
+     "file": "2016-06-24-brexit.EURJPY.json",
+     "bars": 2026,
+     "context": 1440,
+     "from": 1466715720,
+     "to": 1466751600,
+     "open": 120.916,
+     "high": 121.914,
+     "low": 109.49,
+     "close": 112.781,
+     "range": 12.424,
+     "rangePct": 10.27
+    },
+    "AUDJPY": {
+     "file": "2016-06-24-brexit.AUDJPY.json",
+     "bars": 2036,
+     "context": 1439,
+     "from": 1466715720,
+     "to": 1466751600,
+     "open": 80.902,
+     "high": 81.575,
+     "low": 72.459,
+     "close": 75.22,
+     "range": 9.116,
+     "rangePct": 11.27
+    }
+   }
+  },
+  {
+   "id": "2016-11-09-us-election",
+   "date": "2016-11-09",
+   "title": "美国大选开票",
+   "blurb": "开票过程中特朗普意外领先，日元先被抢购，随后行情又整个翻了回来。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2016-11-09-us-election.USDJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1478649600,
+     "to": 1478685600,
+     "open": 104.975,
+     "high": 105.468,
+     "low": 101.186,
+     "close": 103.488,
+     "range": 4.282,
+     "rangePct": 4.08
+    },
+    "EURJPY": {
+     "file": "2016-11-09-us-election.EURJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1478649600,
+     "to": 1478685600,
+     "open": 115.672,
+     "high": 115.961,
+     "low": 113.71,
+     "close": 114.367,
+     "range": 2.251,
+     "rangePct": 1.95
+    },
+    "AUDJPY": {
+     "file": "2016-11-09-us-election.AUDJPY.json",
+     "bars": 2040,
+     "context": 1440,
+     "from": 1478649600,
+     "to": 1478685600,
+     "open": 81.298,
+     "high": 81.927,
+     "low": 76.787,
+     "close": 79.345,
+     "range": 5.14,
+     "rangePct": 6.32
+    }
+   }
+  },
+  {
+   "id": "2019-01-03-flash-crash",
+   "date": "2019-01-03",
+   "title": "新年日元闪崩",
+   "blurb": "新年假期的清晨，一天里流动性最差的几分钟，日元对各货币瞬间飙升，澳元兑日元一度跌去约 7%。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2019-01-03-flash-crash.USDJPY.json",
+     "bars": 1798,
+     "context": 1199,
+     "from": 1546452000,
+     "to": 1546488000,
+     "open": 109.442,
+     "high": 109.455,
+     "low": 104.736,
+     "close": 107.156,
+     "range": 4.719,
+     "rangePct": 4.31
+    },
+    "EURJPY": {
+     "file": "2019-01-03-flash-crash.EURJPY.json",
+     "bars": 1791,
+     "context": 1193,
+     "from": 1546452000,
+     "to": 1546488000,
+     "open": 124.084,
+     "high": 124.091,
+     "low": 119.063,
+     "close": 121.782,
+     "range": 5.028,
+     "rangePct": 4.05
+    },
+    "AUDJPY": {
+     "file": "2019-01-03-flash-crash.AUDJPY.json",
+     "bars": 1800,
+     "context": 1200,
+     "from": 1546452000,
+     "to": 1546488000,
+     "open": 76.596,
+     "high": 76.602,
+     "low": 70.406,
+     "close": 74.297,
+     "range": 6.196,
+     "rangePct": 8.09
+    }
+   }
+  },
+  {
+   "id": "2020-03-09-covid-oil",
+   "date": "2020-03-09",
+   "title": "新冠恐慌与油价崩盘",
+   "blurb": "疫情扩散叠加原油价格战，周一早盘避险情绪爆发，美元兑日元跌到 101 附近。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2020-03-09-covid-oil.USDJPY.json",
+     "bars": 1980,
+     "context": 1380,
+     "from": 1583704800,
+     "to": 1583740800,
+     "open": 104.425,
+     "high": 104.596,
+     "low": 101.553,
+     "close": 102.269,
+     "range": 3.043,
+     "rangePct": 2.91
+    },
+    "EURJPY": {
+     "file": "2020-03-09-covid-oil.EURJPY.json",
+     "bars": 1978,
+     "context": 1378,
+     "from": 1583704800,
+     "to": 1583740800,
+     "open": 118.482,
+     "high": 118.687,
+     "low": 116.351,
+     "close": 116.983,
+     "range": 2.336,
+     "rangePct": 1.97
+    },
+    "AUDJPY": {
+     "file": "2020-03-09-covid-oil.AUDJPY.json",
+     "bars": 1980,
+     "context": 1380,
+     "from": 1583704800,
+     "to": 1583740800,
+     "open": 68.884,
+     "high": 69.177,
+     "low": 64.356,
+     "close": 66.961,
+     "range": 4.821,
+     "rangePct": 7
+    }
+   }
+  },
+  {
+   "id": "2022-09-22-intervention",
+   "date": "2022-09-22",
+   "title": "24 年来首次买入日元",
+   "blurb": "日银维持宽松后日元跌到 145.9，财务省随即入市，这是 1998 年以来日本第一次买入日元干预。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2022-09-22-intervention.USDJPY.json",
+     "bars": 2035,
+     "context": 1435,
+     "from": 1663815600,
+     "to": 1663851600,
+     "open": 144.559,
+     "high": 145.901,
+     "low": 140.346,
+     "close": 140.718,
+     "range": 5.555,
+     "rangePct": 3.84
+    },
+    "EURJPY": {
+     "file": "2022-09-22-intervention.EURJPY.json",
+     "bars": 2036,
+     "context": 1436,
+     "from": 1663815600,
+     "to": 1663851600,
+     "open": 142.004,
+     "high": 143.696,
+     "low": 138.703,
+     "close": 139,
+     "range": 4.993,
+     "rangePct": 3.52
+    },
+    "AUDJPY": {
+     "file": "2022-09-22-intervention.AUDJPY.json",
+     "bars": 2037,
+     "context": 1437,
+     "from": 1663815600,
+     "to": 1663851600,
+     "open": 95.355,
+     "high": 96.407,
+     "low": 93.561,
+     "close": 93.726,
+     "range": 2.846,
+     "rangePct": 2.98
+    }
+   }
+  },
+  {
+   "id": "2024-04-29-160",
+   "date": "2024-04-29",
+   "title": "160 关口与干预",
+   "blurb": "日本假日的清淡早盘，美元兑日元冲上 160，午后突然急跌，事后公布的数据证实是当局入市。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2024-04-29-160.USDJPY.json",
+     "bars": 1918,
+     "context": 1318,
+     "from": 1714341600,
+     "to": 1714377600,
+     "open": 157.897,
+     "high": 160.203,
+     "low": 154.523,
+     "close": 155.561,
+     "range": 5.68,
+     "rangePct": 3.6
+    },
+    "EURJPY": {
+     "file": "2024-04-29-160.EURJPY.json",
+     "bars": 1912,
+     "context": 1312,
+     "from": 1714341600,
+     "to": 1714377600,
+     "open": 168.852,
+     "high": 171.569,
+     "low": 165.627,
+     "close": 166.703,
+     "range": 5.942,
+     "rangePct": 3.52
+    },
+    "AUDJPY": {
+     "file": "2024-04-29-160.AUDJPY.json",
+     "bars": 1915,
+     "context": 1315,
+     "from": 1714341600,
+     "to": 1714377600,
+     "open": 103.105,
+     "high": 104.937,
+     "low": 101.359,
+     "close": 102.099,
+     "range": 3.578,
+     "rangePct": 3.47
+    }
+   }
+  },
+  {
+   "id": "2024-08-05-carry-unwind",
+   "date": "2024-08-05",
+   "title": "套息交易大平仓",
+   "blurb": "日银加息加上美国就业数据走弱，日元套息盘集中平仓，日经指数当天跌了四千多点。",
+   "pairs": {
+    "USDJPY": {
+     "file": "2024-08-05-carry-unwind.USDJPY.json",
+     "bars": 1917,
+     "context": 1317,
+     "from": 1722808800,
+     "to": 1722844800,
+     "open": 146.468,
+     "high": 146.563,
+     "low": 141.676,
+     "close": 143.478,
+     "range": 4.887,
+     "rangePct": 3.34
+    },
+    "EURJPY": {
+     "file": "2024-08-05-carry-unwind.EURJPY.json",
+     "bars": 1914,
+     "context": 1314,
+     "from": 1722808800,
+     "to": 1722844800,
+     "open": 159.957,
+     "high": 159.957,
+     "low": 154.393,
+     "close": 157.085,
+     "range": 5.564,
+     "rangePct": 3.48
+    },
+    "AUDJPY": {
+     "file": "2024-08-05-carry-unwind.AUDJPY.json",
+     "bars": 1914,
+     "context": 1314,
+     "from": 1722808800,
+     "to": 1722844800,
+     "open": 95.403,
+     "high": 95.411,
+     "low": 90.124,
+     "close": 92.526,
+     "range": 5.287,
+     "rangePct": 5.54
+    }
+   }
+  }
+ ]
+}

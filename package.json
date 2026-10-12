@@ -1,0 +1,24 @@
+{
+  "name": "hebi8-toy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/preview.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test \"test/*.test.js\"",
+    "data:fetch": "node scripts/fetch-histdata.mjs",
+    "data:build": "node scripts/build-scenarios.mjs",
+    "shots": "node scripts/shots.mjs"
+  },
+  "dependencies": {
+    "klinecharts": "^10.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

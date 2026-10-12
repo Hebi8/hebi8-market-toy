@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0e11">
+  <title>hebi8 外汇回放</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <section id="home" class="screen">
+      <header class="home-head">
+        <div class="brand">
+          <span class="brand-mark">hebi8</span>
+          <span class="brand-name">外汇回放</span>
+        </div>
+        <div class="home-actions">
+          <button type="button" class="ghost" id="btn-rank">排行榜</button>
+          <button type="button" class="ghost" id="btn-rules">规则</button>
+        </div>
+      </header>
+      <p class="home-lead" id="home-lead">历史大行情逐根回放，用虚拟资金练手。</p>
+      <div class="seg" id="pair-seg" role="group" aria-label="品种"></div>
+      <button type="button" class="resume" id="resume" hidden></button>
+      <ul class="scenarios" id="scenarios" aria-label="场景"></ul>
+      <p class="home-note" id="home-note"></p>
+    </section>
+
+    <section id="game" class="screen" hidden>
+      <header class="top">
+        <button type="button" class="icon" id="btn-back" aria-label="返回场景列表">‹</button>
+        <div class="title">
+          <b id="g-pair"></b>
+          <span id="g-title"></span>
+        </div>
+        <span class="clock" id="g-clock"></span>
+        <div class="seg small" id="tf-seg" role="group" aria-label="周期"></div>
+        <div class="transport">
+          <button type="button" class="icon" id="btn-play" aria-label="播放"></button>
+          <button type="button" class="icon" id="btn-step" aria-label="单步"></button>
+          <button type="button" class="speed" id="btn-speed" aria-label="倍速"></button>
+        </div>
+        <button type="button" class="ghost" id="btn-end">结算</button>
+      </header>
+      <div class="progress" aria-hidden="true"><i id="g-progress"></i></div>
+
+      <main class="stage">
+        <div class="chart-wrap">
+          <div id="chart"></div>
+          <div class="toasts" id="toasts" aria-live="polite"></div>
+        </div>
+
+        <aside class="side">
+          <div class="ticket" id="ticket">
+            <button type="button" class="deal sell" id="btn-sell">
+              <span>卖出</span><b id="q-bid"></b>
+            </button>
+            <div class="lots">
+              <button type="button" class="icon" id="lots-minus" aria-label="减少手数">−</button>
+              <label><input id="lots-input" inputmode="decimal" autocomplete="off" aria-label="手数"><span>手</span></label>
+              <button type="button" class="icon" id="lots-plus" aria-label="增加手数">+</button>
+            </div>
+            <button type="button" class="deal buy" id="btn-buy">
+              <span>买入</span><b id="q-ask"></b>
+            </button>
+          </div>
+
+          <div class="extra" id="extra">
+            <div class="options">
+              <div class="chips" id="lot-chips"></div>
+              <label class="level">止损<input id="sl-input" inputmode="decimal" autocomplete="off" placeholder="不设"><span>点</span></label>
+              <label class="level">止盈<input id="tp-input" inputmode="decimal" autocomplete="off" placeholder="不设"><span>点</span></label>
+            </div>
+            <p class="hint" id="ticket-hint"></p>
+            <div class="tabs">
+              <button type="button" class="tab" data-tab="open" aria-pressed="true">持仓 <i id="n-open">0</i></button>
+              <button type="button" class="tab" data-tab="closed" aria-pressed="false">历史 <i id="n-closed">0</i></button>
+              <button type="button" class="ghost danger" id="btn-close-all" disabled>全部平仓</button>
+            </div>
+            <ul class="rows" id="open-rows"></ul>
+            <ul class="rows" id="closed-rows" hidden></ul>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="account" id="account">
+        <div class="cell"><span>余额</span><b id="a-balance"></b></div>
+        <div class="cell main"><span>净值</span><b id="a-equity"></b></div>
+        <div class="cell"><span>已用保证金</span><b id="a-margin"></b></div>
+        <div class="cell"><span>可用保证金</span><b id="a-free"></b></div>
+        <div class="cell main"><span>维持率</span><b id="a-level"></b></div>
+        <div class="cell main"><span>浮动盈亏</span><b id="a-floating"></b></div>
+        <button type="button" class="ghost sheet-toggle" id="btn-sheet">持仓 <i id="n-open-2">0</i></button>
+      </footer>
+    </section>
+
+    <div class="modal" id="result" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="r-heading">
+        <h2 id="r-heading"></h2>
+        <p class="sub" id="r-sub"></p>
+        <div class="headline">
+          <b id="r-return"></b>
+          <span>最终净值 <i id="r-equity"></i> 日元</span>
+        </div>
+        <div class="stats" id="r-stats"></div>
+        <table class="compare" id="r-compare"></table>
+        <p class="record" id="r-record"></p>
+        <div class="rank" id="r-rank" hidden></div>
+        <div class="actions">
+          <button type="button" class="primary" id="r-again">再来一局</button>
+          <button type="button" class="ghost" id="r-home">换个场景</button>
+          <button type="button" class="ghost" id="r-look">看走势</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="rules" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rules-heading">
+        <h2 id="rules-heading">规则</h2>
+        <ul class="rule-list" id="rule-list"></ul>
+        <div class="actions"><button type="button" class="primary" data-close>知道了</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="rank" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rank-heading">
+        <h2 id="rank-heading">排行榜</h2>
+        <p class="sub">单局收益率，所有场景和品种一起排。</p>
+        <div class="rank" id="rank-body"></div>
+        <div class="actions"><button type="button" class="primary" data-close>关闭</button></div>
+      </div>
+    </div>
+
+    <p class="disclaimer">模拟游戏，历史数据回放，不构成投资建议。</p>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+dist/
+output/
+raw/
+node_modules/
+.build/
+*.log
