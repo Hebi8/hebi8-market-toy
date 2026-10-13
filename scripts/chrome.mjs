@@ -9,8 +9,9 @@ import path from "node:path";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Runs `task({ open, problems })`. `open({ width, height, mobile, scale })`
- * gives a page with `goto`, `evaluate`, `until`, `click`, `shot` and `close`.
+ * Runs `task({ open, problems, browser })`. `open({ width, height, mobile, scale })`
+ * gives a page with `goto`, `evaluate`, `until`, `click`, `press`, `shot` and `close`;
+ * `browser(method, params)` sends a DevTools command to the browser itself.
  * `problems` collects page errors and requests to any host outside `origins`.
  */
 export async function withChrome(origins, task) {
@@ -91,6 +92,14 @@ export async function withChrome(origins, task) {
           await until(`document.readyState === "complete"`, url);
         },
         click: (selector) => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`),
+        /** A click the browser counts as the user's own, for what only works on a user gesture. */
+        async press(selector) {
+          const { x, y } = await evaluate(`(() => {
+            const box = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();
+            return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+          })()`);
+          for (const type of ["mousePressed", "mouseReleased"]) await cdp("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
+        },
         async shot(file) {
           await sleep(350);
           const { data } = await cdp("Page.captureScreenshot", { format: "png" });
@@ -99,7 +108,7 @@ export async function withChrome(origins, task) {
         close: () => send("Target.closeTarget", { targetId }),
       };
     };
-    await task({ open, problems });
+    await task({ open, problems, browser: (method, params) => send(method, params) });
   } finally {
     socket?.close();
     chrome.kill();

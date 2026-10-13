@@ -14,13 +14,15 @@ import { RULES } from "../src/engine/rules.js";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const pub = `${root}public/`;
 /**
- * The only addresses the package may name, both Bilibili's own: the Toy SDK
- * (loaded on Bilibili's hosts alone) and the author's space, which the
- * "作者主页" button opens when there is no container to navigate with.
+ * The only addresses the package may name, all Bilibili's own: the Toy SDK
+ * (loaded on Bilibili's hosts alone), the author's space, which the
+ * "作者主页" button opens when there is no container to navigate with, and
+ * the Toy's own published address, which challenge links start with.
  */
 const ALLOWED_URLS = new Set([
   "https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js",
   "https://space.bilibili.com/66384529",
+  "https://www.bilibili.com/toy/hebi8-fx-replay/index.html",
 ]);
 /** Namespaces are identifiers, not requests. */
 const NAMESPACE = /^http:\/\/www\.w3\.org\//;

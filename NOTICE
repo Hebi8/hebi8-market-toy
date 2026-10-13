@@ -15,3 +15,8 @@ Chart library
   KLineChart (klinecharts) is bundled into app.js.
   Copyright (c) 2019 lihu. Licensed under the Apache License 2.0; its licence
   and notice ship as LICENSE-klinecharts.txt and NOTICE-klinecharts.txt.
+
+QR codes
+  uqr is bundled into app.js; it draws the QR code on the share picture.
+  Copyright (c) Project Nayuki; Copyright (c) 2023 Anthony Fu. MIT licence;
+  its text ships as LICENSE-uqr.txt.

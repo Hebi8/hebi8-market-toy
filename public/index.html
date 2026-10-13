@@ -114,13 +114,44 @@
         </div>
         <div class="stats" id="r-stats"></div>
         <table class="compare" id="r-compare"></table>
+        <p class="record" id="r-verdict" hidden></p>
         <p class="record" id="r-record"></p>
         <div class="rank" id="r-rank" hidden></div>
         <div class="actions">
           <button type="button" class="primary" id="r-again">再来一局</button>
+          <button type="button" class="ghost" id="r-share">分享战绩</button>
           <button type="button" class="ghost" id="r-home">换个场景</button>
           <button type="button" class="ghost" id="r-look">看走势</button>
           <button type="button" class="ghost" id="r-author">作者主页</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="share" hidden>
+      <div class="dialog wide" role="dialog" aria-modal="true" aria-labelledby="share-heading">
+        <h2 id="share-heading">分享战绩</h2>
+        <p class="sub">把图发给朋友，扫码进来就是同一个场景、同一个品种。</p>
+        <div class="share-body">
+          <img id="share-img" alt="这一局的战绩图">
+          <div class="share-side">
+            <button type="button" class="primary" id="share-save">保存图片</button>
+            <button type="button" class="ghost" id="share-copy">复制挑战链接</button>
+            <button type="button" class="ghost" id="share-native" hidden>分享</button>
+            <button type="button" class="ghost" data-close>关闭</button>
+            <textarea id="share-text" readonly hidden rows="4" aria-label="挑战链接"></textarea>
+            <p class="hint" id="share-status" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="challenge" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="c-heading">
+        <h2 id="c-heading">朋友发来一个挑战</h2>
+        <p class="challenge-text" id="c-text"></p>
+        <div class="actions">
+          <button type="button" class="primary" id="c-start">开始挑战</button>
+          <button type="button" class="ghost" data-close>先看看别的</button>
         </div>
       </div>
     </div>

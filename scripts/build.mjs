@@ -10,10 +10,11 @@ await rm(`${root}dist`, { recursive: true, force: true });
 await mkdir(`${root}dist`, { recursive: true });
 await cp(`${root}public`, `${root}dist/toy`, { recursive: true });
 await writeFile(`${root}dist/toy/app.js`, await bundle());
-// Data source and the bundled chart library's licence travel with the package.
+// Data source and the licences of what is bundled travel with the package.
 await cp(`${root}NOTICE`, `${root}dist/toy/NOTICE.txt`);
 await cp(`${root}node_modules/klinecharts/LICENSE`, `${root}dist/toy/LICENSE-klinecharts.txt`);
 await cp(`${root}node_modules/klinecharts/NOTICE`, `${root}dist/toy/NOTICE-klinecharts.txt`);
+await cp(`${root}node_modules/uqr/LICENSE`, `${root}dist/toy/LICENSE-uqr.txt`);
 execFileSync("python3", ["-c", `
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED

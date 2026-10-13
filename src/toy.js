@@ -5,18 +5,14 @@
 // The SDK has no public reference, so every call is probed with `isSupport`
 // first and wrapped: a failure never reaches the game.
 
+import { scoreOf } from "./engine/score.js";
+
 const SDK_URL = "https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js";
 const toyHost = /(^|\.)(bilibili\.com|bilibilitoy\.com)$/.test(location.hostname);
 /** The author's Bilibili space, where the "作者主页" button leads. */
 const AUTHOR = { id: "66384529", url: "https://space.bilibili.com/66384529" };
-/**
- * The single leaderboard: a round's final equity against the opening balance,
- * in hundredths of a percent (10000 = break-even). Kept at zero or above: a
- * losing round sent as a negative score never appeared on the board.
- */
+/** The single leaderboard; what a score means is in ./engine/score.js. */
 const BOARD = 1;
-// The SDK accepts integer scores in ±2^24.
-const SCORE_MAX = 2 ** 24 - 1;
 
 let loading = null;
 function sdk() {
@@ -84,9 +80,6 @@ export async function hasRank() {
   return Boolean(await toyWith("submitScore")) && Boolean(await toyWith("getRankList"));
 }
 
-export const scoreOf = (returnPct) => Math.max(0, Math.min(SCORE_MAX, Math.round((100 + returnPct) * 100)));
-export const returnOf = (score) => score / 100 - 100;
-
 /** Sends a round's result: true when the board took it, otherwise why not, in the SDK's own words. */
 export async function submitScore(returnPct) {
   try {
@@ -149,6 +142,55 @@ export async function myRank() {
     return Number.isFinite(score) && rank > 0 ? { rank, score } : null;
   } catch {
     return null;
+  }
+}
+
+let profile = null;
+/**
+ * The player's `{ nickname, avatar }`, or null. The first call makes the
+ * platform ask the player for consent, so it is only made once they chose to
+ * share; the answer, a refusal included, is kept for the rest of the visit.
+ */
+export function userProfile() {
+  profile ??= (async () => {
+    try {
+      const toy = await toyWith("getUserProfile");
+      if (!toy) return null;
+      const answer = await toy.getUserProfile();
+      const nickname = typeof answer?.nickname === "string" ? answer.nickname.trim() : "";
+      if (!nickname) return null;
+      const avatar = typeof answer.avatar === "string" && answer.avatar.startsWith("https://") ? answer.avatar : null;
+      return { nickname, avatar };
+    } catch {
+      return null;
+    }
+  })();
+  return profile;
+}
+
+/** Puts a PNG (as a data URL) into the phone's album; only the Bilibili app can. True when it did. */
+export async function saveToAlbum(dataUrl) {
+  try {
+    const toy = await toyWith("saveImageToAlbum");
+    if (!toy) return false;
+    await toy.saveImageToAlbum({ base64Data: dataUrl.slice(dataUrl.indexOf(",") + 1), hintMsg: "战绩图已保存到相册" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the container has a share sheet of its own (the Bilibili app does). */
+export const canShare = () => toyWith("share").then(Boolean, () => false);
+/** Opens it for `path`, a page inside this Toy with its query string. True when it opened. */
+export async function shareToy(path) {
+  try {
+    const toy = await toyWith("share");
+    if (!toy) return false;
+    await toy.share({ path });
+    return true;
+  } catch {
+    return false;
   }
 }
 

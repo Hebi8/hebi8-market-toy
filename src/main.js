@@ -5,13 +5,16 @@ import {
   positionLeverage, profitAt, quote, result, step, summary, unleveragedBuyAndHold,
 } from "./engine/engine.js";
 import { bucketStart } from "./engine/aggregate.js";
+import { challengeGap, parseChallenge } from "./engine/challenge.js";
+import { SCORE_MAX, returnOf } from "./engine/score.js";
 import { REPLAY, RULES } from "./engine/rules.js";
 import { createChart } from "./chart.js";
 import { loadBars, loadIndex } from "./data.js";
 import { clock, dateTime, duration, escapeHtml, lots as fmtLots, multiple, pairName, percent, price, signedYen, timeOfDay, tone, yen } from "./format.js";
 import { allBests, bestOf, loadPrefs, loadRound, loadSettings, recordResult, savePrefs, saveRound, saveSettings, syncCloud } from "./storage.js";
 import { applyPalette, cssColor, otherPalette, palette, paletteName } from "./theme.js";
-import { hasRank, myRank, openAuthorSpace, prepareNavigate, rankList, returnOf, submitScore, watchSafeArea } from "./toy.js";
+import { openShare } from "./share.js";
+import { hasRank, myRank, openAuthorSpace, prepareNavigate, rankList, submitScore, watchSafeArea } from "./toy.js";
 
 const $ = (id) => document.getElementById(id);
 const ICON = {
@@ -136,7 +139,11 @@ $("scenarios").addEventListener("click", (event) => {
 
 // ---------- a round ----------
 
-async function startRound(scenario, pair, saved = null) {
+/**
+ * Opens a round. `saved` continues one that was left; `target` is the result
+ * of a friend's round to beat, `{ score, returnPct }` from a challenge link.
+ */
+async function startRound(scenario, pair, saved = null, target = null) {
   let data;
   try {
     data = await loadBars(scenario, pair);
@@ -147,6 +154,9 @@ async function startRound(scenario, pair, saved = null) {
   const { bars, context } = data;
   // A round saved against other data (the scenario was rebuilt) cannot be continued.
   if (saved && !(saved.cursor >= context && saved.cursor < bars.length)) saved = null;
+  // A round that was left keeps the challenge it was played for.
+  const kept = saved?.target?.score;
+  if (Number.isInteger(kept) && kept >= 0 && kept <= SCORE_MAX) target = { score: kept, returnPct: returnOf(kept) };
   const account = saved?.account ?? createAccount(pair);
   if (!saved) mark(account, bars[context - 1].c, bars[context - 1].t);
   app.round = {
@@ -159,13 +169,14 @@ async function startRound(scenario, pair, saved = null) {
     /** Set once the round is over: outcome, benchmarks, record. */
     ended: null,
     tab: "open",
+    target,
   };
 
   show("game");
   $("game").classList.remove("sheet-open", "over");
   $("result").hidden = true;
   text($("g-pair"), pairName(pair));
-  text($("g-title"), scenario.title);
+  text($("g-title"), target ? `${scenario.title} · 挑战 ${percent(target.returnPct)}` : scenario.title);
   $("btn-end").textContent = "结算";
   $("toasts").replaceChildren();
   rows.open.clear();
@@ -187,7 +198,10 @@ async function startRound(scenario, pair, saved = null) {
 function persistRound() {
   const round = app.round;
   if (!round || round.ended) return;
-  saveRound({ scenarioId: round.scenario.id, pair: round.pair, cursor: round.cursor, account: round.account });
+  saveRound({
+    scenarioId: round.scenario.id, pair: round.pair, cursor: round.cursor, account: round.account,
+    target: round.target && { score: round.target.score },
+  });
 }
 
 /** Reveals the next one-minute bar and lets the account live through it. */
@@ -462,12 +476,26 @@ function showResult() {
     ["初始资金", yen(RULES.initialBalance)],
   ].map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join("");
 
+  const { target } = round;
   $("r-compare").innerHTML = `<tr><th>同一段行情</th><th>收益率</th><th></th></tr>` + [
     ["你", outcome.returnPct, `${outcome.trades} 笔交易`],
+    ...(target ? [["朋友的成绩", target.returnPct, "挑战链接里带来的"]] : []),
     ["1 倍杠杆买入持有", plain.returnPct, "开局买入，不加杠杆，拿到最后"],
     ["不动", 0, "一直空仓"],
   ].map(([label, value, note], index) =>
     `<tr${index ? "" : ' class="you"'}><td>${label}</td><td data-tone="${tone(value)}">${percent(value)}</td><td>${note}</td></tr>`).join("");
+
+  const verdict = $("r-verdict");
+  verdict.hidden = !target;
+  if (target) {
+    const gap = challengeGap(outcome.returnPct, target);
+    text(verdict, gap > 0 ? `挑战成功：比朋友高 ${gap.toFixed(2)} 个百分点。`
+      : gap < 0 ? `还差 ${Math.abs(gap).toFixed(2)} 个百分点，没超过朋友。`
+        : "和朋友打了个平手。");
+    verdict.dataset.tone = gap > 0 ? "up" : gap < 0 ? "down" : "flat";
+  }
+  // A round without a trade is no result to send around.
+  $("r-share").hidden = !counts;
 
   const best = bestOf(round.scenario.id, round.pair);
   text($("r-record"), !counts ? "没有交易，这一局不计成绩。"
@@ -581,7 +609,19 @@ $("open-rows").onclick = (event) => {
 };
 for (const button of document.querySelectorAll(".tab")) button.onclick = () => pickTab(button.dataset.tab);
 $("btn-sheet").onclick = () => $("game").classList.toggle("sheet-open");
-$("r-again").onclick = () => startRound(app.round.scenario, app.round.pair);
+// Another go at the same round keeps the friend's result to beat; choosing a round from the list does not.
+$("r-again").onclick = () => startRound(app.round.scenario, app.round.pair, null, app.round.target);
+$("r-share").onclick = () => {
+  const round = app.round;
+  openShare({
+    scenario: round.scenario,
+    pair: round.pair,
+    outcome: round.ended.outcome,
+    played: round.bars.slice(round.context, round.cursor),
+    trades: round.account.closed,
+    withRank: app.rank,
+  });
+};
 $("r-home").onclick = () => $("btn-back").onclick();
 $("r-look").onclick = () => {
   $("result").hidden = true;
@@ -629,6 +669,19 @@ function usePalette() {
   }
 }
 
+/** A link that challenges to a round opens on that challenge; anything else in the address is ignored. */
+function offerChallenge() {
+  const challenge = parseChallenge(location.search, app.index);
+  if (!challenge) return;
+  const { scenario, pair, score, returnPct } = challenge;
+  $("c-text").innerHTML = `朋友在〈${escapeHtml(scenario.title)} · ${pairName(pair)}〉拿到了 <b data-tone="${tone(returnPct)}">${percent(returnPct)}</b>。同一段行情，看你能不能超过。`;
+  $("c-start").onclick = () => {
+    $("challenge").hidden = true;
+    startRound(scenario, pair, null, { score, returnPct });
+  };
+  openModal("challenge");
+}
+
 async function boot() {
   usePalette();
   watchSafeArea();
@@ -655,6 +708,7 @@ async function boot() {
   text($("home-lead"), `历史大行情的 ${app.index.granularity} 分钟线逐根回放，用 ${yen(RULES.initialBalance)} 虚拟日元练手。`);
   text($("home-note"), `行情数据：${app.index.source} 的历史报价（买价），时间按${REPLAY.timezoneLabel}显示。`);
   renderHome();
+  offerChallenge();
   // Bests saved in the cloud and the leaderboard arrive when the SDK does.
   hasRank().then((available) => {
     app.rank = available;

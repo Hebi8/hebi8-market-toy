@@ -437,6 +437,42 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .compare td:last-child { padding-left: 10px; color: var(--muted); font-size: 11px; }
 .compare .you td:first-child { font-weight: 600; }
 .record { margin: 8px 0 0; color: var(--accent); font-size: 12px; }
+.record[data-tone="up"] { color: var(--up); }
+.record[data-tone="down"] { color: var(--down); }
+.record[data-tone="flat"] { color: var(--fg); }
+.challenge-text { margin: 10px 0 0; font-size: 14px; line-height: 1.7; }
+.challenge-text b { font-family: var(--mono); }
+
+/* The share panel: the picture small enough to see whole, the buttons beside
+   it, or below it where there is no room beside. */
+.dialog.wide { width: min(600px, 100%); }
+.share-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+#share-img {
+  flex: none;
+  width: auto;
+  height: min(54vh, 460px);
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  /* Long-press saves it where nothing else does. */
+  -webkit-touch-callout: default;
+  user-select: auto;
+}
+.share-side { flex: 1 1 150px; display: grid; gap: 8px; min-width: 0; }
+.share-side .ghost { padding: 8px 12px; }
+.share-side .hint { padding: 0; }
+#share-text {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 11px/1.5 var(--mono);
+  resize: none;
+  word-break: break-all;
+}
 .rank { margin-top: 8px; font-size: 12px; }
 .rank ol { max-height: 190px; margin: 6px 0 0; padding: 0; overflow-y: auto; list-style: none; }
 .rank li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px; padding: 4px 2px; border-bottom: 1px solid var(--hair); }
@@ -530,6 +566,15 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
   .headline b { font-size: 22px; }
   .stats { margin: 6px 0; }
   .modal { padding: 6px 6px 22px; }
+  /* Four buttons fit in one row; the author's page is one tap away on the list. */
+  .actions { gap: 6px; }
+  .actions .ghost, .actions .primary { padding: 6px 10px; font-size: 12px; }
+  #r-author { display: none; }
+  /* The picture and its buttons side by side, so nothing needs scrolling to be reached. */
+  #share-img { height: min(50vh, 200px); }
+  .share-side { flex-basis: 120px; gap: 6px; }
+  .share-side .ghost, .share-side .primary { padding: 6px 10px; font-size: 12px; }
+  .dialog .sub { margin-bottom: 6px; }
   /* The dialog scrolls; its buttons stay in reach. */
   .actions { position: sticky; bottom: -10px; margin-top: 4px; padding: 8px 0 10px; background: var(--panel); }
 }
