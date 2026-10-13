@@ -13,8 +13,15 @@ import { RULES } from "../src/engine/rules.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const pub = `${root}public/`;
-/** The only address the package may name: the Toy SDK, loaded on Bilibili's hosts alone. */
-const ALLOWED_URLS = new Set(["https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js"]);
+/**
+ * The only addresses the package may name, both Bilibili's own: the Toy SDK
+ * (loaded on Bilibili's hosts alone) and the author's space, which the
+ * "作者主页" button opens when there is no container to navigate with.
+ */
+const ALLOWED_URLS = new Set([
+  "https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js",
+  "https://space.bilibili.com/66384529",
+]);
 /** Namespaces are identifiers, not requests. */
 const NAMESPACE = /^http:\/\/www\.w3\.org\//;
 const LIMIT_BYTES = 10 * 1024 * 1024;
@@ -46,6 +53,17 @@ for (const [what, pattern] of [
 // The one fetch is the scenario loader, and it stays inside the package.
 assert.equal(app.split("fetch(").length - 1, 1, "app.js should fetch in exactly one place");
 assert(/fetch\(`\.\/data\//.test(app), "the scenario loader must fetch a relative ./data/ path");
+
+// The up and down colours are the player's choice: written down in src/theme.js and nowhere else.
+const theme = await readFile(`${root}src/theme.js`, "utf8");
+const paletteColours = [...new Set(theme.match(/#[0-9a-f]{6}\b/gi))];
+assert(paletteColours.length >= 4, "src/theme.js should define the palette");
+for (const name of [...(await readdir(`${root}src`, { recursive: true })).map((file) => `src/${file}`), "public/styles.css", "public/index.html"]) {
+  if (name === "src/theme.js" || !/\.(js|css|html)$/.test(name)) continue;
+  const text = await readFile(`${root}${name}`, "utf8");
+  for (const colour of paletteColours) assert(!text.toLowerCase().includes(colour.toLowerCase()), `${name}: palette colour ${colour} written outside src/theme.js`);
+  if (name.endsWith(".css")) assert(!/--(up|down)(-fill|-soft)?\s*:/.test(text), `${name}: sets an up/down colour itself`);
+}
 
 // 3. Static files only point at files that ship, never at another host.
 let pages = 0;

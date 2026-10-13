@@ -23,10 +23,16 @@
         </div>
       </header>
       <p class="home-lead" id="home-lead">历史大行情逐根回放，用虚拟资金练手。</p>
-      <div class="seg" id="pair-seg" role="group" aria-label="品种"></div>
+      <div class="home-row">
+        <div class="seg" id="pair-seg" role="group" aria-label="品种"></div>
+        <button type="button" class="ghost palette" id="btn-palette"><i class="swatch up"></i><i class="swatch down"></i><span id="palette-label"></span></button>
+      </div>
       <button type="button" class="resume" id="resume" hidden></button>
       <ul class="scenarios" id="scenarios" aria-label="场景"></ul>
-      <p class="home-note" id="home-note"></p>
+      <div class="home-foot">
+        <p class="home-note" id="home-note"></p>
+        <button type="button" class="ghost" id="btn-author">作者主页</button>
+      </div>
     </section>
 
     <section id="game" class="screen" hidden>
@@ -60,7 +66,7 @@
             </button>
             <div class="lots">
               <button type="button" class="icon" id="lots-minus" aria-label="减少手数">−</button>
-              <label><input id="lots-input" inputmode="decimal" autocomplete="off" aria-label="手数"><span>手</span></label>
+              <label><span class="size"><input id="lots-input" inputmode="decimal" autocomplete="off" aria-label="手数"><span>手</span></span><small id="lots-lev"></small></label>
               <button type="button" class="icon" id="lots-plus" aria-label="增加手数">+</button>
             </div>
             <button type="button" class="deal buy" id="btn-buy">
@@ -87,12 +93,13 @@
       </main>
 
       <footer class="account" id="account">
-        <div class="cell"><span>余额</span><b id="a-balance"></b></div>
         <div class="cell main"><span>净值</span><b id="a-equity"></b></div>
+        <div class="cell main"><span>浮动盈亏</span><b id="a-floating"></b></div>
+        <div class="cell main"><span><i>实际</i>杠杆</span><b id="a-leverage"></b></div>
+        <div class="cell"><span>余额</span><b id="a-balance"></b></div>
         <div class="cell"><span>已用保证金</span><b id="a-margin"></b></div>
         <div class="cell"><span>可用保证金</span><b id="a-free"></b></div>
-        <div class="cell main"><span>维持率</span><b id="a-level"></b></div>
-        <div class="cell main"><span>浮动盈亏</span><b id="a-floating"></b></div>
+        <div class="cell"><span>维持率</span><b id="a-level"></b></div>
         <button type="button" class="ghost sheet-toggle" id="btn-sheet">持仓 <i id="n-open-2">0</i></button>
       </footer>
     </section>
@@ -113,6 +120,7 @@
           <button type="button" class="primary" id="r-again">再来一局</button>
           <button type="button" class="ghost" id="r-home">换个场景</button>
           <button type="button" class="ghost" id="r-look">看走势</button>
+          <button type="button" class="ghost" id="r-author">作者主页</button>
         </div>
       </div>
     </div>

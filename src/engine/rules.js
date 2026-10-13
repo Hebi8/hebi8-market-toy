@@ -10,8 +10,11 @@ export const RULES = {
   /** Smallest order and the grid lots are rounded to. */
   minLots: 0.1,
   lotStep: 0.1,
-  /** Lots offered as one-tap choices next to the stepper. */
-  lotChoices: [1, 5, 10],
+  /**
+   * One-tap order sizes next to the stepper, as multiples of the current
+   * equity: 5 means an order worth five times what the account holds.
+   */
+  leverageChoices: [1, 5, 10],
   /**
    * Forced liquidation starts when equity / used margin falls below this
    * (1 = 100%). Positions are closed one at a time, largest loss first.
@@ -32,7 +35,8 @@ export const REPLAY = {
   defaultTimeframe: 5,
   /** One-minute bars revealed per second. */
   speeds: [1, 2, 5, 10, 30],
-  defaultSpeed: 2,
+  /** Every new round starts playing at this speed. */
+  defaultSpeed: 1,
   /** Clock and chart axis: hours ahead of UTC and what to call it. */
   utcOffsetHours: 8,
   timezone: "Asia/Shanghai",

@@ -1,10 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  allInBuyAndHold, closeAll, closePosition, createAccount, finish, mark, maxLots, modifyPosition,
-  openPosition, quote, result, step, summary, unleveragedBuyAndHold,
+  closeAll, closePosition, createAccount, finish, lotsForLeverage, mark, maxLots, modifyPosition,
+  openPosition, orderLeverage, positionLeverage, quote, result, step, summary, unleveragedBuyAndHold,
 } from "../src/engine/engine.js";
-import { RULES } from "../src/engine/rules.js";
 
 // USDJPY: spread 0.003 yen, 1 lot = 10,000 units, leverage 25, balance 1,000,000.
 const account = (bid = 150) => {
@@ -33,6 +32,8 @@ test("a buy fills at the ask and its profit is the yen move times the units", ()
     freeMargin: 949_968,
     marginLevel: 1_009_970 / 60_002,
     floating: 9_970,
+    notional: 1_510_000,
+    leverage: 1_510_000 / 1_009_970,
   });
   const trade = closePosition(state, position.id);
   assert.equal(trade.close, 151);
@@ -281,14 +282,62 @@ test("stop-loss and take-profit can be changed on an open position", () => {
   assert.equal(event.type, "tp");
 });
 
-test("buy-and-hold benchmarks: all-in is liquidated by the first real dip, unleveraged just follows the price", () => {
-  const bars = [bar(150, 150.1, 149.9, 150, 60), bar(150, 150.2, 148, 148.5, 120), bar(148.5, 153, 148.5, 153, 180)];
-  const allIn = allInBuyAndHold("USDJPY", 150, bars);
-  assert.equal(allIn.lots, 16.6);
-  assert.equal(allIn.status, "liquidated");
-  assert.equal(allIn.liquidatedAt, 60);
-  assert.ok(allIn.equity < RULES.initialBalance && allIn.equity > 990_000);
+test("effective leverage is what is open, in yen, over the equity", () => {
+  const state = account();
+  assert.equal(summary(state).leverage, 0);
+  // An order of one lot is worth 1,500,030 yen: one and a half times the account.
+  assert.ok(Math.abs(orderLeverage(state, 1) - 1.50003) < 1e-12);
 
+  const { position: long } = openPosition(state, { side: "buy", lots: 3 });
+  assert.equal(summary(state).notional, 4_500_000);
+  assert.ok(Math.abs(summary(state).leverage - 4_500_000 / 999_910) < 1e-12);
+  assert.ok(Math.abs(positionLeverage(state, long) - 4_500_000 / 999_910) < 1e-12);
+
+  // A short adds to the exposure instead of cancelling it.
+  const { position: short } = openPosition(state, { side: "sell", lots: 1 });
+  assert.equal(summary(state).notional, 6_000_000);
+  assert.ok(Math.abs(positionLeverage(state, short) - 1_500_000 / 999_880) < 1e-12);
+
+  // Losses shrink the equity, so the same positions weigh more.
+  mark(state, 148, 60);
+  assert.equal(summary(state).equity, 1_000_000 - 60_090 + 19_970);
+  assert.ok(Math.abs(summary(state).leverage - 5_920_000 / 959_880) < 1e-12);
+  assert.ok(Math.abs(orderLeverage(state, 1) - 1_480_030 / 959_880) < 1e-12);
+});
+
+test("an order can be sized as a multiple of the equity", () => {
+  const state = account();
+  // 1,000,000 / (150.003 × 10,000) = 0.666… lots per 1×, rounded down to 0.1 lot.
+  assert.equal(lotsForLeverage(state, 1), 0.6);
+  assert.equal(lotsForLeverage(state, 5), 3.3);
+  assert.equal(lotsForLeverage(state, 10), 6.6);
+  // Beyond what the margin allows it stops at the largest possible order.
+  assert.equal(lotsForLeverage(state, 40), maxLots(state));
+  assert.ok(orderLeverage(state, lotsForLeverage(state, 5)) <= 5);
+
+  // With part of the margin in use, less is left to open.
+  openPosition(state, { side: "buy", lots: 10 });
+  assert.equal(lotsForLeverage(state, 10), maxLots(state));
+  assert.equal(lotsForLeverage(state, 1), 0.6);
+
+  // An account too small for a tenth of a lot per 1× still gets the smallest order.
+  const small = account();
+  small.balance = 100_000;
+  assert.equal(lotsForLeverage(small, 1), 0.1);
+});
+
+test("without equity there is no leverage to speak of", () => {
+  const state = account();
+  openPosition(state, { side: "buy", lots: 1 });
+  state.balance = -5_000;
+  assert.equal(summary(state).leverage, null);
+  assert.equal(orderLeverage(state, 1), null);
+});
+
+test("the benchmark is buying once at leverage 1 and holding to the end", () => {
+  const bars = [bar(150, 150.1, 149.9, 150, 60), bar(150, 150.2, 148, 148.5, 120), bar(148.5, 153, 148.5, 153, 180)];
   const plain = unleveragedBuyAndHold("USDJPY", 150, bars);
   assert.ok(Math.abs(plain.returnPct - ((153 - 150.003) / 150.003) * 100) < 1e-12);
+  assert.equal(plain.equity, 1_019_980);
+  assert.equal(unleveragedBuyAndHold("USDJPY", 150, []).equity, 999_980);
 });

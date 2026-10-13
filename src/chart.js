@@ -4,18 +4,8 @@
 import { dispose, init, registerOverlay } from "klinecharts";
 import { aggregate, merge } from "./engine/aggregate.js";
 import { REPLAY, RULES } from "./engine/rules.js";
+import { cssColor, palette } from "./theme.js";
 
-/** Red up, green down, as charts are read on Bilibili's side of the world. */
-export const COLORS = {
-  up: "#f0485b",
-  down: "#1fb287",
-  flat: "#8a94a3",
-  text: "#9aa4b2",
-  grid: "#1a2029",
-  line: "#2a323d",
-  panel: "#11151b",
-  accent: "#e8b339",
-};
 const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace';
 const SANS = 'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 const LEVEL = "levelLine";
@@ -57,57 +47,62 @@ function registerLevelLine() {
   });
 }
 
-const axis = {
-  axisLine: { color: COLORS.line },
-  tickLine: { color: COLORS.line },
-  tickText: { color: COLORS.text, family: MONO, size: 10 },
-};
-const styles = {
-  grid: { horizontal: { color: COLORS.grid }, vertical: { color: COLORS.grid } },
-  candle: {
-    bar: {
-      upColor: COLORS.up, downColor: COLORS.down, noChangeColor: COLORS.flat,
-      upBorderColor: COLORS.up, downBorderColor: COLORS.down, noChangeBorderColor: COLORS.flat,
-      upWickColor: COLORS.up, downWickColor: COLORS.down, noChangeWickColor: COLORS.flat,
-    },
-    priceMark: {
-      high: { color: COLORS.text, textFamily: MONO, textSize: 10 },
-      low: { color: COLORS.text, textFamily: MONO, textSize: 10 },
-      last: {
-        upColor: COLORS.up, downColor: COLORS.down, noChangeColor: COLORS.flat,
-        text: { family: MONO, size: 10 },
+/** The chart's look, from the stylesheet's colours and the palette in use. */
+function buildStyles() {
+  const { up, down } = palette();
+  const text = cssColor("--muted");
+  const line = cssColor("--line");
+  const grid = cssColor("--hair");
+  const axis = {
+    axisLine: { color: line },
+    tickLine: { color: line },
+    tickText: { color: text, family: MONO, size: 10 },
+  };
+  const cross = { line: { color: text }, text: { family: MONO, size: 10, backgroundColor: line, borderColor: line } };
+  return {
+    grid: { horizontal: { color: grid }, vertical: { color: grid } },
+    candle: {
+      bar: {
+        upColor: up.line, downColor: down.line, noChangeColor: text,
+        upBorderColor: up.line, downBorderColor: down.line, noChangeBorderColor: text,
+        upWickColor: up.line, downWickColor: down.line, noChangeWickColor: text,
+      },
+      priceMark: {
+        high: { color: text, textFamily: MONO, textSize: 10 },
+        low: { color: text, textFamily: MONO, textSize: 10 },
+        last: {
+          upColor: up.line, downColor: down.line, noChangeColor: text,
+          text: { family: MONO, size: 10 },
+        },
+      },
+      tooltip: {
+        showRule: "follow_cross",
+        title: { show: false },
+        legend: {
+          color: text, family: MONO, size: 10,
+          template: [
+            { title: "", value: "{time}" },
+            { title: "开", value: "{open}" },
+            { title: "高", value: "{high}" },
+            { title: "低", value: "{low}" },
+            { title: "收", value: "{close}" },
+          ],
+        },
       },
     },
-    tooltip: {
-      showRule: "follow_cross",
-      title: { show: false },
-      legend: {
-        color: COLORS.text, family: MONO, size: 10,
-        template: [
-          { title: "", value: "{time}" },
-          { title: "开", value: "{open}" },
-          { title: "高", value: "{high}" },
-          { title: "低", value: "{low}" },
-          { title: "收", value: "{close}" },
-        ],
-      },
-    },
-  },
-  xAxis: axis,
-  yAxis: axis,
-  separator: { color: COLORS.line },
-  crosshair: {
-    horizontal: { line: { color: COLORS.text }, text: { family: MONO, size: 10, backgroundColor: COLORS.line, borderColor: COLORS.line } },
-    vertical: { line: { color: COLORS.text }, text: { family: MONO, size: 10, backgroundColor: COLORS.line, borderColor: COLORS.line } },
-  },
-};
+    xAxis: axis,
+    yAxis: axis,
+    separator: { color: line },
+    crosshair: { horizontal: cross, vertical: cross },
+  };
+}
 
 const toKLine = (bar) => ({ timestamp: bar.t * 1000, open: bar.o, high: bar.h, low: bar.l, close: bar.c });
 
 export function createChart(element, pair) {
   registerLevelLine();
   const chart = init(element, { locale: "zh-CN", timezone: REPLAY.timezone, styles: "dark" });
-  chart.setStyles(styles);
+  chart.setStyles(buildStyles());
 
   /** One-minute bars revealed so far, and the same in the period shown. */
   let revealed = [];
@@ -169,6 +164,10 @@ export function createChart(element, pair) {
         points: [{ timestamp, value: level.price }],
         extendData: level,
       })).filter(Boolean);
+    },
+    /** Takes the colours again after the palette changed. */
+    restyle() {
+      chart.setStyles(buildStyles());
     },
     resize() {
       chart.resize();

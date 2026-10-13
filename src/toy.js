@@ -7,6 +7,8 @@
 
 const SDK_URL = "https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js";
 const toyHost = /(^|\.)(bilibili\.com|bilibilitoy\.com)$/.test(location.hostname);
+/** The author's Bilibili space, where the "作者主页" button leads. */
+const AUTHOR = { id: "66384529", url: "https://space.bilibili.com/66384529" };
 /** The single leaderboard: best return of a round, in hundredths of a percent. */
 const BOARD = 1;
 // The SDK accepts integer scores in ±2^24.
@@ -53,6 +55,25 @@ export async function watchSafeArea() {
     // Older clients keep the CSS env() fallback.
   }
 }
+
+/**
+ * Opens the author's space: through the container inside Bilibili, in a new
+ * tab anywhere else. Call it from a click; the SDK insists on a user gesture.
+ */
+export async function openAuthorSpace() {
+  try {
+    const toy = await toyWith("navigate");
+    if (toy) {
+      await toy.navigate({ type: "space", id: AUTHOR.id });
+      return;
+    }
+  } catch {
+    // Fall through to a plain new tab.
+  }
+  window.open(AUTHOR.url, "_blank", "noopener");
+}
+/** Loads the SDK and asks about `navigate` ahead of the click, so the click itself has nothing to wait for. */
+export const prepareNavigate = () => toyWith("navigate").then(Boolean, () => false);
 
 /** Whether a leaderboard exists here at all (decides what the result page shows). */
 export async function hasRank() {

@@ -12,9 +12,9 @@
   --hair: #1a2029;
   --fg: #d9dee6;
   --muted: #8791a0;
-  --up: #f0485b;
-  --down: #1fb287;
   --accent: #e8b339;
+  /* --up, --down and their -fill / -soft variants are not here: which colour
+     means "up" is the player's choice, and src/theme.js sets them. */
   --sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
   --ticket: 46px;
@@ -152,6 +152,12 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .home-actions { display: flex; gap: 6px; }
 .home-lead, .home-note { margin: 0; color: var(--muted); font-size: 12px; }
 .home-note { font-size: 11px; }
+.home-row, .home-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.home-foot .ghost { flex: none; }
+.palette { display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; color: var(--muted); }
+.swatch { width: 7px; height: 12px; border-radius: 1px; }
+.swatch.up { background: var(--up); }
+.swatch.down { background: var(--down); margin-right: 2px; }
 
 .resume {
   display: grid;
@@ -281,21 +287,26 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 }
 .deal span { font-size: 11px; opacity: 0.9; }
 .deal b { font: 600 15px var(--mono); }
-.deal.buy { border-color: var(--up); background: #c2374a; }
-.deal.sell { border-color: var(--down); background: #178a69; }
+.deal.buy { border-color: var(--up); background: var(--up-fill); }
+.deal.sell { border-color: var(--down); background: var(--down-fill); }
 .lots { display: flex; align-items: center; gap: 3px; }
 .lots label {
   display: flex;
-  align-items: baseline;
-  gap: 2px;
-  height: 30px;
-  padding: 4px 6px 0;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  height: 38px;
+  padding: 0 6px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--bg);
   color: var(--muted);
   font-size: 11px;
+  line-height: 1.15;
 }
+.lots .size { display: flex; align-items: baseline; gap: 2px; }
+/* What the order weighs, as a multiple of the equity. */
+.lots small { font: 10px var(--mono); white-space: nowrap; }
 .lots input, .level input {
   padding: 0;
   border: 0;
@@ -308,14 +319,15 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 
 .extra { display: flex; flex-direction: column; min-height: 0; max-height: 34vh; }
 .options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 0 8px 6px; }
-.chips { display: flex; flex: 1 0 100%; gap: 4px; }
+.chips { display: flex; flex: 1 0 100%; align-items: center; gap: 4px; }
+.chips span { margin-right: 2px; color: var(--muted); font-size: 11px; }
 .chips button {
   padding: 3px 8px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font: 11px var(--mono);
 }
 .level { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
 .level input {
@@ -354,26 +366,35 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 }
 .rows .empty { display: block; padding: 10px 8px; border: 0; color: var(--muted); font-size: 12px; }
 .tag { padding: 1px 5px; border-radius: 3px; font-size: 11px; }
-.tag.buy { background: rgba(240, 72, 91, 0.14); color: var(--up); }
-.tag.sell { background: rgba(31, 178, 135, 0.14); color: var(--down); }
+.tag.buy { background: var(--up-soft); color: var(--up); }
+.tag.sell { background: var(--down-soft); color: var(--down); }
 .what { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .what b { font: 600 12px var(--mono); }
 .what i { color: var(--muted); font: normal 12px var(--mono); }
+.what em { margin-left: 2px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; color: var(--fg); font: normal 11px var(--mono); }
 .what small { display: block; color: var(--muted); font-size: 10px; }
 .pnl { font: 600 13px var(--mono); white-space: nowrap; }
 
+/* Equity, floating profit and effective leverage lead; the margin figures
+   behind them are there for whoever wants them, a step quieter. */
 .account {
   flex: none;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px 10px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px 10px;
   padding: 5px 8px;
   border-top: 1px solid var(--line);
   background: var(--raised);
 }
-.cell { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; }
+.cell { grid-column: span 3; display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .cell span { color: var(--muted); font-size: 10px; white-space: nowrap; }
-.cell b { font: 600 12px var(--mono); white-space: nowrap; }
+.cell span i { font-style: normal; }
+.cell b { color: var(--muted); font: 500 11px var(--mono); white-space: nowrap; }
+.cell.main { grid-column: span 4; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 6px; }
+.cell.main b { color: var(--fg); font-weight: 600; font-size: 13px; }
+.cell b[data-tone="up"] { color: var(--up); }
+.cell b[data-tone="down"] { color: var(--down); }
+.cell b[data-tone="warn"] { color: var(--accent); }
 .sheet-toggle { display: none; }
 
 #game.over .ticket { opacity: 0.55; }
@@ -445,10 +466,11 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
   .deal { min-height: 48px; }
   .extra { flex: 1; max-height: none; }
   .options, .hint { padding-left: 10px; padding-right: 10px; }
-  .account { grid-template-columns: repeat(6, auto); justify-content: space-between; padding: 7px 14px; }
-  .cell { justify-content: flex-start; gap: 8px; }
+  .account { grid-template-columns: repeat(7, auto); align-items: baseline; justify-content: space-between; padding: 7px 14px; }
+  .cell, .cell.main { grid-column: auto; flex-direction: row; align-items: baseline; justify-content: flex-start; gap: 8px; }
   .cell span { font-size: 11px; }
-  .cell b { font-size: 13px; }
+  .cell b { font-size: 12px; }
+  .cell.main b { font-size: 14px; }
 }
 
 /* ---------- short: the half-height frame under a video ---------- */
@@ -490,9 +512,14 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
     background: var(--panel);
   }
 
+  .lots label { height: 36px; }
+
   .account { grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; gap: 0 10px; padding: 2px 6px; }
-  .cell { justify-content: flex-start; gap: 4px; }
-  .cell.main { order: 0; }
+  .cell, .cell.main { grid-column: auto; }
+  .cell.main { order: 0; justify-content: flex-start; gap: 4px; }
+  .cell.main b { font-size: 12px; }
+  /* "杠杆" is enough of a label where every pixel counts. */
+  .cell span i { display: none; }
   .sheet-toggle { order: 1; display: inline-block; justify-self: end; padding: 1px 8px; font-size: 11px; }
   .cell:not(.main) { order: 2; display: none; }
   #game.sheet-open .cell:not(.main) { display: flex; }

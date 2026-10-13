@@ -54,6 +54,8 @@ export function profitAt(state, position, bid) {
 }
 
 const usedMargin = (state) => state.positions.reduce((sum, position) => sum + position.margin, 0);
+/** Yen value of everything open at bid `bid`; longs and shorts add up, they do not cancel. */
+const notionalAt = (state, bid) => state.positions.reduce((sum, position) => sum + position.units * bid, 0);
 const floatingAt = (state, bid) => state.positions.reduce((sum, position) => sum + profitAt(state, position, bid), 0);
 const equityAt = (state, bid) => state.balance + floatingAt(state, bid);
 
@@ -62,6 +64,7 @@ export function summary(state, bid = state.price) {
   const margin = usedMargin(state);
   const floating = bid == null ? 0 : floatingAt(state, bid);
   const equity = state.balance + floating;
+  const notional = bid == null ? 0 : notionalAt(state, bid);
   return {
     balance: state.balance,
     equity,
@@ -70,7 +73,25 @@ export function summary(state, bid = state.price) {
     /** Equity / used margin; null while nothing is open. */
     marginLevel: margin > 0 ? equity / margin : null,
     floating,
+    notional,
+    /**
+     * Effective leverage: what is open is worth this many times the equity.
+     * Null once there is no equity left to compare with.
+     */
+    leverage: equity > 0 ? notional / equity : null,
   };
+}
+
+/** How many times the current equity an order of `lots` would be worth. Null without equity. */
+export function orderLeverage(state, lots, rules = RULES) {
+  const { equity } = summary(state);
+  return equity > 0 ? (lots * rules.lotUnits * (state.price + state.spread)) / equity : null;
+}
+
+/** The same for one open position, valued at the current price. */
+export function positionLeverage(state, position) {
+  const { equity } = summary(state);
+  return equity > 0 ? (position.units * state.price) / equity : null;
 }
 
 const marginFor = (price, units, rules) => Math.ceil((price * units) / rules.leverage);
@@ -84,6 +105,19 @@ export function maxLots(state, rules = RULES) {
   // Margin is rounded up per order, so the last step may not fit after all.
   while (steps > 0 && marginFor(state.price + state.spread, Math.round(steps * rules.lotStep * rules.lotUnits), rules) > freeMargin) steps--;
   return Math.max(0, Number((steps * rules.lotStep).toFixed(4)));
+}
+
+/**
+ * The order size worth `multiple` times the current equity, rounded down to
+ * the lot grid: never below the smallest order, never above what the free
+ * margin allows.
+ */
+export function lotsForLeverage(state, multiple, rules = RULES) {
+  if (state.price == null) return rules.minLots;
+  const { equity } = summary(state);
+  const steps = Math.floor((multiple * equity) / ((state.price + state.spread) * rules.lotUnits) / rules.lotStep + 1e-9);
+  const lots = Math.min(steps * rules.lotStep, maxLots(state, rules));
+  return Number(Math.max(rules.minLots, lots).toFixed(4));
 }
 
 /** Null when the levels are on the right side of the price, else which one is wrong. */
@@ -290,28 +324,10 @@ export function result(state, rules = RULES) {
 }
 
 /**
- * What the same bars did to someone who bought everything the leverage allows
- * at the start and never touched it again, forced liquidation included.
+ * What the same bars did to someone who bought at the start with a position
+ * worth exactly the balance (leverage 1) and never touched it: bought at the
+ * ask, valued at the last bid.
  */
-export function allInBuyAndHold(pair, startPrice, bars, rules = RULES) {
-  const state = createAccount(pair, rules);
-  mark(state, startPrice, bars[0]?.t ?? null);
-  const opened = openPosition(state, { side: BUY, lots: maxLots(state, rules) }, rules);
-  let liquidatedAt = null;
-  if (opened.ok) {
-    for (const bar of bars) {
-      step(state, bar, rules);
-      if (state.status === "liquidated") {
-        liquidatedAt = bar.t;
-        break;
-      }
-    }
-  }
-  finish(state);
-  return { ...result(state, rules), lots: opened.ok ? opened.position.lots : 0, liquidatedAt };
-}
-
-/** The same without leverage: a position worth exactly the balance, bought at the ask, valued at the last bid. */
 export function unleveragedBuyAndHold(pair, startPrice, bars, rules = RULES) {
   const ask = startPrice + rules.spread[pair];
   const last = bars.length ? bars[bars.length - 1].c : startPrice;

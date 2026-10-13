@@ -1,5 +1,7 @@
 // Plays one full round in headless Chrome at the three sizes the Toy has to
-// work in and saves a screenshot of every step under output/shots/.
+// work in and saves a screenshot of every step under output/shots/. Along the
+// way it checks that a new round starts playing by itself at 1×, that a
+// continued one waits, and that the other colour scheme reaches the chart.
 // Needs the preview server (`npm run dev`, or `npm run dev -- --dist`).
 //
 //   node scripts/shots.mjs [page url]
@@ -48,13 +50,23 @@ const problems = await withChrome([new URL(base).origin], async ({ open }) => {
       await click(`.scenario[data-id="${SCENARIO}"]`);
       await until(`!document.getElementById("game").hidden && document.querySelector("#chart canvas")`, "the chart");
       await until(`document.getElementById("q-bid").textContent.length > 0`, "a quote");
+      // A new round runs from the first moment, at 1×.
+      const playing = `document.getElementById("btn-play").getAttribute("aria-label") === "暂停"`;
+      const clock = `document.getElementById("g-clock").textContent`;
+      if (!(await evaluate(playing)) || await evaluate(`document.getElementById("btn-speed").textContent`) !== "1×") throw new Error("the round did not start playing at 1×");
+      const opened = await evaluate(clock);
+      await until(`${clock} !== ${JSON.stringify(opened)}`, "the replay to move on its own", 5000);
+      await click("#btn-play");
       await shot("2-start");
 
-      // Buy 3 lots with a stop-loss and a take-profit, then let it run.
+      // An order worth five times the account, with a stop-loss and a take-profit.
+      await click(`#lot-chips [data-leverage="5"]`);
       await evaluate(`(() => {
         const set = (id, value) => { const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event("change")); };
-        set("lots-input", "3"); set("sl-input", "60"); set("tp-input", "150");
+        set("sl-input", "60"); set("tp-input", "150");
       })()`);
+      const weight = await evaluate(`document.getElementById("ticket-hint").textContent`);
+      if (!/这一单 ≈ 本金的 [45]\.\d 倍/.test(weight)) throw new Error(`the 5× choice gives "${weight}"`);
       await click("#btn-buy");
       await until(`document.getElementById("n-open").textContent === "1"`, "the long position");
       if (size.name === "desktop") {
@@ -64,6 +76,10 @@ const problems = await withChrome([new URL(base).origin], async ({ open }) => {
         await shot("2-resume");
         await click("#resume");
         await until(`!document.getElementById("game").hidden && document.getElementById("n-open").textContent === "1"`, "the resumed round");
+        // ...and waits for the player instead of running off.
+        const resumed = await evaluate(clock);
+        await sleep(1500);
+        if (await evaluate(playing) || await evaluate(clock) !== resumed) throw new Error("a continued round must stay paused");
       }
       if (size.name === "half") {
         await click("#btn-sheet");
@@ -102,6 +118,25 @@ const problems = await withChrome([new URL(base).origin], async ({ open }) => {
       await click("#btn-back");
       await until(`!document.getElementById("home").hidden`, "the scenario list again");
       await shot("7-home-best");
+
+      if (size.name === "desktop") {
+        // The other colour scheme: list, buttons, candles and level lines follow.
+        const label = await evaluate(`document.getElementById("palette-label").textContent`);
+        await click("#btn-palette");
+        await until(`document.getElementById("palette-label").textContent !== ${JSON.stringify(label)}`, "the colour scheme to switch");
+        await click(`.scenario[data-id="2024-08-05-carry-unwind"]`);
+        await until(`!document.getElementById("game").hidden && ${playing}`, "the second round");
+        await click("#btn-play");
+        await click(`#lot-chips [data-leverage="10"]`);
+        await click("#btn-sell");
+        await click("#tf-seg button[data-value='5']");
+        for (let i = 0; i < 40; i++) await click("#btn-step");
+        await shot("8-red-up");
+        await click("#btn-back");
+        await page.goto(base);
+        await until(`document.querySelectorAll(".scenario").length > 0`, "the list after a reload");
+        if (await evaluate(`document.getElementById("palette-label").textContent`) === label) throw new Error("the colour scheme was not remembered");
+      }
     } catch (error) {
       failure = `${size.name}: ${error.message}`;
       break;

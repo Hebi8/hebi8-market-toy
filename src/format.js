@@ -11,6 +11,8 @@ export const signedYen = (value) => {
 export const price = (value) => value.toFixed(RULES.priceDecimals);
 export const lots = (value) => value.toFixed(1);
 export const percent = (value, digits = 2) => `${value > 0 ? "+" : value < 0 ? MINUS : ""}${Math.abs(value).toFixed(digits)}%`;
+/** A multiple of the equity: `4.3×`, or with another unit `4.3 倍`. A dash when there is none. */
+export const multiple = (value, unit = "×") => (value == null ? "—" : `${value >= 100 ? value.toFixed(0) : value.toFixed(1)}${unit}`);
 export const pairName = (pair) => `${pair.slice(0, 3)}/${pair.slice(3)}`;
 /** up | down | flat, for colouring a signed number. */
 export const tone = (value) => (value > 0 ? "up" : value < 0 ? "down" : "flat");

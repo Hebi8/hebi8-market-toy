@@ -1,16 +1,17 @@
 // The page: scenario list, the replay with its order ticket and account
 // line, and the result of a round. All trading maths is in ./engine/.
 import {
-  allInBuyAndHold, closeAll, closePosition, createAccount, finish, mark, maxLots, openPosition,
-  profitAt, quote, result, step, summary, unleveragedBuyAndHold,
+  closeAll, closePosition, createAccount, finish, lotsForLeverage, mark, maxLots, openPosition, orderLeverage,
+  positionLeverage, profitAt, quote, result, step, summary, unleveragedBuyAndHold,
 } from "./engine/engine.js";
 import { bucketStart } from "./engine/aggregate.js";
 import { REPLAY, RULES } from "./engine/rules.js";
-import { COLORS, createChart } from "./chart.js";
+import { createChart } from "./chart.js";
 import { loadBars, loadIndex } from "./data.js";
-import { clock, dateTime, duration, escapeHtml, lots as fmtLots, pairName, percent, price, signedYen, timeOfDay, tone, yen } from "./format.js";
-import { allBests, bestOf, loadPrefs, loadRound, recordResult, savePrefs, saveRound, syncBests } from "./storage.js";
-import { hasRank, myRank, rankList, returnOf, submitScore, watchSafeArea } from "./toy.js";
+import { clock, dateTime, duration, escapeHtml, lots as fmtLots, multiple, pairName, percent, price, signedYen, timeOfDay, tone, yen } from "./format.js";
+import { allBests, bestOf, loadPrefs, loadRound, loadSettings, recordResult, savePrefs, saveRound, saveSettings, syncCloud } from "./storage.js";
+import { applyPalette, cssColor, otherPalette, palette, paletteName } from "./theme.js";
+import { hasRank, myRank, openAuthorSpace, prepareNavigate, rankList, returnOf, submitScore, watchSafeArea } from "./toy.js";
 
 const $ = (id) => document.getElementById(id);
 const ICON = {
@@ -23,14 +24,13 @@ const REASON = { manual: "手动", sl: "止损", tp: "止盈", stopout: "强平"
 const ORDER_ERROR = {
   closed: "本局已结束",
   lots: `最少 ${RULES.minLots} 手`,
-  margin: "可用保证金不足",
+  margin: `超过 ${RULES.leverage} 倍杠杆上限，开不了这么多`,
   sl: "止损离现价太近",
   tp: "止盈离现价太近",
 };
 
-const prefs = { pair: "USDJPY", timeframe: REPLAY.defaultTimeframe, speed: REPLAY.defaultSpeed, lots: 1, sl: "", tp: "", ...loadPrefs() };
+const prefs = { pair: "USDJPY", timeframe: REPLAY.defaultTimeframe, lots: 1, sl: "", tp: "", ...loadPrefs() };
 if (!REPLAY.timeframes.includes(prefs.timeframe)) prefs.timeframe = REPLAY.defaultTimeframe;
-if (!REPLAY.speeds.includes(prefs.speed)) prefs.speed = REPLAY.defaultSpeed;
 const remember = (patch) => savePrefs(Object.assign(prefs, patch));
 
 const app = {
@@ -154,6 +154,8 @@ async function startRound(scenario, pair, saved = null) {
     /** Bars revealed so far, context included. */
     cursor: saved?.cursor ?? context,
     playing: false,
+    /** One-minute bars per second; every round starts at the default. */
+    speed: REPLAY.defaultSpeed,
     /** Set once the round is over: outcome, benchmarks, record. */
     ended: null,
     tab: "open",
@@ -177,6 +179,9 @@ async function startRound(scenario, pair, saved = null) {
   refreshLevels();
   renderClosed();
   render();
+  // A new round starts running at once. One that is continued waits: whoever
+  // comes back to it wants a look at where things stand first.
+  if (!saved) setPlaying(true);
 }
 
 function persistRound() {
@@ -209,7 +214,7 @@ let owed = 0;
 function loop(now) {
   const round = app.round;
   if (!round?.playing) return;
-  owed += Math.min(0.25, (now - lastFrame) / 1000) * prefs.speed;
+  owed += Math.min(0.25, (now - lastFrame) / 1000) * round.speed;
   lastFrame = now;
   while (owed >= 1 && round.playing) {
     owed -= 1;
@@ -261,7 +266,6 @@ function endRound(early) {
     early,
     liquidated,
     plain: unleveragedBuyAndHold(round.pair, start, played),
-    allIn: allInBuyAndHold(round.pair, start, played),
     record: counts && recordResult(round.scenario.id, round.pair, outcome),
     counts,
   };
@@ -293,12 +297,28 @@ const pipsOf = (input) => {
   const value = Number(input.value);
   return Number.isFinite(value) && value > 0 ? value : null;
 };
+/** Says what the order in the ticket would weigh: itself and together with what is open, in multiples of the equity. */
 function renderHint() {
   const round = app.round;
   if (!round) return;
-  const { ask } = quote(round.account);
-  const margin = Math.ceil((ask * readLots() * RULES.lotUnits) / RULES.leverage);
-  text($("ticket-hint"), `${fmtLots(readLots())} 手约占用保证金 ${yen(margin)}，最多可开 ${fmtLots(maxLots(round.account))} 手`);
+  const { account } = round;
+  if (round.ended) {
+    text($("ticket-hint"), "本局已结束。");
+    $("ticket-hint").dataset.tone = "flat";
+    return;
+  }
+  const order = orderLeverage(account, readLots());
+  const { leverage } = summary(account);
+  text($("lots-lev"), order == null ? "" : `≈ ${multiple(order)}`);
+  const hint = $("ticket-hint");
+  if (order == null || leverage == null) {
+    text(hint, "净值已经亏完，开不了新仓。");
+    hint.dataset.tone = "warn";
+    return;
+  }
+  const fits = readLots() <= maxLots(account) + 1e-9;
+  text(hint, `这一单 ≈ 本金的 ${multiple(order, " 倍")} · 下单后合计 ${multiple(leverage + order, " 倍")}（上限 ${RULES.leverage} 倍${fits ? "" : "，超了"}）`);
+  hint.dataset.tone = fits ? "flat" : "warn";
 }
 
 function trade(side) {
@@ -330,10 +350,10 @@ function refreshLevels() {
   const round = app.round;
   const levels = [];
   for (const position of round.account.positions) {
-    const color = position.side === "buy" ? COLORS.up : COLORS.down;
+    const color = (position.side === "buy" ? palette().up : palette().down).line;
     levels.push({ price: position.open, label: `${SIDE[position.side]} ${fmtLots(position.lots)}`, color, solid: true });
-    if (position.sl != null) levels.push({ price: position.sl, label: "止损", color: COLORS.flat });
-    if (position.tp != null) levels.push({ price: position.tp, label: "止盈", color: COLORS.accent });
+    if (position.sl != null) levels.push({ price: position.sl, label: "止损", color: cssColor("--muted") });
+    if (position.tp != null) levels.push({ price: position.tp, label: "止盈", color: cssColor("--accent") });
   }
   app.chart.setLevels(levels);
 }
@@ -351,19 +371,20 @@ function renderOpenRows(account) {
       const item = document.createElement("li");
       const levels = [position.sl != null && `止损 ${price(position.sl)}`, position.tp != null && `止盈 ${price(position.tp)}`].filter(Boolean).join(" · ");
       item.innerHTML = `<span class="tag ${position.side}">${SIDE[position.side]}</span>
-        <span class="what"><b>${fmtLots(position.lots)} 手</b> <i>${price(position.open)}</i>${levels ? `<small>${levels}</small>` : ""}</span>
+        <span class="what"><b>${fmtLots(position.lots)} 手</b> <i>${price(position.open)}</i> <em></em>${levels ? `<small>${levels}</small>` : ""}</span>
         <b class="pnl"></b>
         <button type="button" class="ghost" data-close-id="${position.id}">平仓</button>`;
-      rows.open.set(position.id, item.querySelector(".pnl"));
+      rows.open.set(position.id, { pnl: item.querySelector(".pnl"), weight: item.querySelector("em") });
       return item;
     }));
     if (!ids.length) list.innerHTML = '<li class="empty">没有持仓。点「买入」或「卖出」开一笔。</li>';
   }
   for (const position of account.positions) {
-    const cell = rows.open.get(position.id);
+    const { pnl, weight } = rows.open.get(position.id);
     const profit = profitAt(account, position, account.price);
-    text(cell, signedYen(profit));
-    setTone(cell, profit);
+    text(pnl, signedYen(profit));
+    setTone(pnl, profit);
+    text(weight, multiple(positionLeverage(account, position)));
   }
 }
 function renderClosed() {
@@ -394,8 +415,11 @@ function render() {
   text($("a-margin"), yen(line.margin));
   text($("a-free"), yen(line.freeMargin));
   text($("a-level"), line.marginLevel == null ? "—" : `${Math.min(99_999, line.marginLevel * 100).toFixed(0)}%`);
+  text($("a-leverage"), multiple(line.leverage));
   // Warn while the next few percent would trigger forced liquidation.
-  $("a-level").dataset.tone = line.marginLevel != null && line.marginLevel < RULES.stopOutLevel * 1.5 ? "warn" : "flat";
+  const close = line.marginLevel != null && line.marginLevel < RULES.stopOutLevel * 1.5;
+  $("a-level").dataset.tone = close ? "warn" : "flat";
+  $("a-leverage").dataset.tone = close ? "warn" : "flat";
   text($("a-floating"), signedYen(line.floating));
   setTone($("a-floating"), line.floating);
 
@@ -410,7 +434,7 @@ function render() {
   $("btn-play").innerHTML = round.playing ? ICON.pause : ICON.play;
   $("btn-play").setAttribute("aria-label", round.playing ? "暂停" : "播放");
   for (const id of ["btn-play", "btn-step", "btn-sell", "btn-buy"]) $(id).disabled = over;
-  text($("btn-speed"), `${prefs.speed}×`);
+  text($("btn-speed"), `${round.speed}×`);
   text($("n-open"), String(account.positions.length));
   text($("n-open-2"), String(account.positions.length));
   $("btn-close-all").disabled = over || !account.positions.length;
@@ -422,7 +446,7 @@ function render() {
 
 function showResult() {
   const round = app.round;
-  const { outcome, early, liquidated, plain, allIn, record, counts } = round.ended;
+  const { outcome, early, liquidated, plain, record, counts } = round.ended;
   const played = round.bars.slice(round.context, round.cursor);
   text($("r-heading"), liquidated ? "爆仓了" : early ? "提前结算" : "回放结束");
   text($("r-sub"), `${round.scenario.title} · ${pairName(round.pair)} · ${dateTime(played[0]?.t ?? round.account.time)} 起 ${duration(played.length * 60)}`);
@@ -438,14 +462,10 @@ function showResult() {
     ["初始资金", yen(RULES.initialBalance)],
   ].map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join("");
 
-  const allInNote = allIn.liquidatedAt != null
-    ? `开局 ${duration(allIn.liquidatedAt - played[0].t + 60)}后被强平`
-    : `${fmtLots(allIn.lots)} 手拿到最后`;
   $("r-compare").innerHTML = `<tr><th>同一段行情</th><th>收益率</th><th></th></tr>` + [
     ["你", outcome.returnPct, `${outcome.trades} 笔交易`],
+    ["1 倍杠杆买入持有", plain.returnPct, "开局买入，不加杠杆，拿到最后"],
     ["不动", 0, "一直空仓"],
-    ["开局买入持有", plain.returnPct, "不加杠杆"],
-    [`开局满仓买入持有`, allIn.returnPct, `${RULES.leverage} 倍，${allInNote}`],
   ].map(([label, value, note], index) =>
     `<tr${index ? "" : ' class="you"'}><td>${label}</td><td data-tone="${tone(value)}">${percent(value)}</td><td>${note}</td></tr>`).join("");
 
@@ -490,6 +510,7 @@ function renderRules() {
     `每局初始资金 ${yen(RULES.initialBalance)} 日元（虚拟），杠杆 ${RULES.leverage} 倍，1 手 = ${yen(RULES.lotUnits)} 单位基础货币，最少 ${RULES.minLots} 手。`,
     `图上画的是买价。买入按买价加点差成交、按买价平仓；卖出按买价成交、按买价加点差平仓。点差固定：${spreads}（1 点 = ${RULES.pip} 日元）。`,
     "未来的 K 线看不到。可以暂停、单步、调倍速，周期只影响显示，成交和判定都按 1 分钟线。",
+    `仓位大小用「实际杠杆」来看：持仓的日元价值 ÷ 当前净值。5× 就是手里的仓位值本金的 5 倍，价格每动 1%，净值动 5%。多单和空单的价值相加，不互相抵消；上限 ${RULES.leverage} 倍。`,
     "止损、止盈按距离开仓价的点数填写，留空就是不设。可以同时持有多笔，也可以做空。",
     `维持率（净值 ÷ 已用保证金）跌破 ${(RULES.stopOutLevel * 100).toFixed(0)}% 时强制平仓，从亏损最大的一笔开始，直到维持率恢复；仓位被全部强平，本局结束。`,
     "一根 K 线只知道开高低收，不知道先后。判定时按对你不利的顺序走：开盘 → 对净持仓不利的一端 → 另一端 → 收盘；途中先碰到的止损或强平线先执行，止盈放到最后。所以同一根里止损和止盈都碰到，算止损。",
@@ -513,8 +534,8 @@ $("btn-back").onclick = () => {
 $("btn-play").onclick = () => setPlaying(!app.round.playing);
 $("btn-step").onclick = stepOnce;
 $("btn-speed").onclick = () => {
-  const next = REPLAY.speeds[(REPLAY.speeds.indexOf(prefs.speed) + 1) % REPLAY.speeds.length];
-  remember({ speed: next });
+  const round = app.round;
+  round.speed = REPLAY.speeds[(REPLAY.speeds.indexOf(round.speed) + 1) % REPLAY.speeds.length];
   render();
 };
 let endArmed = 0;
@@ -541,9 +562,10 @@ lotsInput.onchange = () => writeLots(readLots());
 $("sl-input").onchange = () => remember({ sl: $("sl-input").value });
 $("tp-input").onchange = () => remember({ tp: $("tp-input").value });
 $("lot-chips").onclick = (event) => {
-  const button = event.target.closest("button[data-lots]");
+  const button = event.target.closest("button[data-leverage]");
   if (!button || !app.round) return;
-  writeLots(button.dataset.lots === "max" ? maxLots(app.round.account) : Number(button.dataset.lots));
+  const { account } = app.round;
+  writeLots(button.dataset.leverage === "max" ? maxLots(account) : lotsForLeverage(account, Number(button.dataset.leverage)));
 };
 $("btn-close-all").onclick = () => {
   const trades = closeAll(app.round.account);
@@ -563,6 +585,12 @@ $("r-again").onclick = () => startRound(app.round.scenario, app.round.pair);
 $("r-home").onclick = () => $("btn-back").onclick();
 $("r-look").onclick = () => {
   $("result").hidden = true;
+};
+$("btn-author").onclick = openAuthorSpace;
+$("r-author").onclick = openAuthorSpace;
+$("btn-palette").onclick = () => {
+  saveSettings({ palette: otherPalette() });
+  usePalette();
 };
 $("btn-rules").onclick = () => {
   renderRules();
@@ -590,11 +618,25 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", persistRound);
 new ResizeObserver(() => app.chart?.resize()).observe($("chart"));
 
+/** Puts the saved colour scheme on the page, the chart and its level lines. */
+function usePalette() {
+  applyPalette(loadSettings().palette);
+  text($("palette-label"), palette().label);
+  $("btn-palette").setAttribute("aria-label", `涨跌配色：${palette().label}，点击切换`);
+  if (app.round) {
+    app.chart.restyle();
+    refreshLevels();
+  }
+}
+
 async function boot() {
+  usePalette();
   watchSafeArea();
+  prepareNavigate();
   $("btn-step").innerHTML = ICON.step;
-  $("lot-chips").innerHTML = RULES.lotChoices.map((value) => `<button type="button" data-lots="${value}">${value} 手</button>`).join("")
-    + '<button type="button" data-lots="max">最大</button>';
+  $("lot-chips").innerHTML = "<span>本金的</span>"
+    + RULES.leverageChoices.map((value) => `<button type="button" data-leverage="${value}">${value}×</button>`).join("")
+    + '<button type="button" data-leverage="max">最大</button>';
   lotsInput.value = fmtLots(prefs.lots);
   $("sl-input").value = prefs.sl;
   $("tp-input").value = prefs.tp;
@@ -617,8 +659,9 @@ async function boot() {
   hasRank().then((available) => {
     app.rank = available;
   });
-  syncBests().then((changed) => {
-    if (changed && !app.round) renderHome();
+  syncCloud().then((changed) => {
+    if (changed.settings && paletteName() !== loadSettings().palette) usePalette();
+    if (changed.bests && !app.round) renderHome();
   });
 }
 boot();
