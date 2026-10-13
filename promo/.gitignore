@@ -1,0 +1,6 @@
+node_modules
+out
+.DS_Store
+
+# Screenshots and the frame sequence of the played round: `npm run capture` makes them again.
+public/captures
