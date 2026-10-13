@@ -1,0 +1,43 @@
+name: Build Toy package
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - name: Test the engine
+        run: npm test
+
+      - name: Build Toy ZIP
+        run: npm run build
+
+      - name: Check the package
+        run: npm run check
+
+      - name: Upload Toy ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/hebi8-fx-replay-toy.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 30

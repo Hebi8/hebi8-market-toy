@@ -1,0 +1,56 @@
+name: Publish to Bilibili Toy
+
+# Every submission starts a Bilibili review, so this runs for version tags only.
+# It runs on the devNuc runner, where the Toy CLI is installed and logged in;
+# nothing from a pull request ever reaches this job.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: 提交 B 站审核（不勾选：只打包并确认 Toy CLI 已登录）
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency: publish
+
+jobs:
+  publish:
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 10
+    env:
+      TOY_ID: ${{ vars.TOY_ID }}
+      TOY_NO_UPDATE_CHECK: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - name: Test the engine
+        run: npm test
+
+      - name: Build Toy ZIP
+        run: npm run build
+
+      - name: Check the package
+        run: npm run check
+
+      - name: Toy CLI account
+        run: '"$HOME/.local/bin/toy" whoami'
+
+      - name: Submit for review
+        if: github.event_name == 'push' || inputs.submit
+        run: |
+          test -n "$TOY_ID" || { echo "::error::Set the TOY_ID repository variable to the Toy's id first"; exit 1; }
+          "$HOME/.local/bin/toy" update "$TOY_ID" dist/toy --yes --json
