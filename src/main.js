@@ -478,7 +478,7 @@ function showResult() {
   rank.hidden = !app.rank;
   if (app.rank) {
     rank.textContent = counts ? "正在提交成绩…" : "";
-    (counts ? submitScore(outcome.returnPct) : Promise.resolve(null)).then((sent) => renderRank(rank, sent === false ? "成绩没有提交上去。" : ""));
+    (counts ? submitScore(outcome.returnPct) : Promise.resolve(null)).then((sent) => renderRank(rank, typeof sent === "string" ? `成绩没有提交上去（${escapeHtml(sent)}）。` : ""));
   }
   openModal("result");
 }
@@ -500,7 +500,7 @@ async function renderRank(target, note = "") {
   target.innerHTML = (note ? `<p class="rank-note">${note}</p>` : "")
     + (mine ? `<p class="rank-note">我的排名：第 ${mine.rank} 名，${percent(returnOf(mine.score))}</p>` : "")
     + (list.length
-      ? `<ol>${list.map((row) => `<li${row.self ? ' class="you"' : ""}><i>${row.rank}</i><span>${escapeHtml(row.name)}</span><b data-tone="${tone(row.score)}">${percent(returnOf(row.score))}</b></li>`).join("")}</ol>`
+      ? `<ol>${list.map((row) => `<li${row.self ? ' class="you"' : ""}><i>${row.rank}</i><span>${escapeHtml(row.name)}</span><b data-tone="${tone(returnOf(row.score))}">${percent(returnOf(row.score))}</b></li>`).join("")}</ol>`
       : '<p class="rank-note">还没有人上榜。</p>');
 }
 

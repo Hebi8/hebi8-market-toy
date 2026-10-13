@@ -9,7 +9,11 @@ const SDK_URL = "https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js";
 const toyHost = /(^|\.)(bilibili\.com|bilibilitoy\.com)$/.test(location.hostname);
 /** The author's Bilibili space, where the "作者主页" button leads. */
 const AUTHOR = { id: "66384529", url: "https://space.bilibili.com/66384529" };
-/** The single leaderboard: best return of a round, in hundredths of a percent. */
+/**
+ * The single leaderboard: a round's final equity against the opening balance,
+ * in hundredths of a percent (10000 = break-even). Kept at zero or above: a
+ * losing round sent as a negative score never appeared on the board.
+ */
 const BOARD = 1;
 // The SDK accepts integer scores in ±2^24.
 const SCORE_MAX = 2 ** 24 - 1;
@@ -80,17 +84,18 @@ export async function hasRank() {
   return Boolean(await toyWith("submitScore")) && Boolean(await toyWith("getRankList"));
 }
 
-export const scoreOf = (returnPct) => Math.max(-SCORE_MAX, Math.min(SCORE_MAX, Math.round(returnPct * 100)));
-export const returnOf = (score) => score / 100;
+export const scoreOf = (returnPct) => Math.max(0, Math.min(SCORE_MAX, Math.round((100 + returnPct) * 100)));
+export const returnOf = (score) => score / 100 - 100;
 
+/** Sends a round's result: true when the board took it, otherwise why not, in the SDK's own words. */
 export async function submitScore(returnPct) {
   try {
     const toy = await toyWith("submitScore");
-    if (!toy) return false;
+    if (!toy) return "这里没有排行榜接口";
     await toy.submitScore({ board: BOARD, score: scoreOf(returnPct) });
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    return [error?.type, error?.message].filter(Boolean).join(": ").slice(0, 120) || "未知原因";
   }
 }
 
