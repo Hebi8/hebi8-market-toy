@@ -1,7 +1,7 @@
 name: Publish to Bilibili Toy
 
 # Every submission starts a Bilibili review, so this runs for version tags only.
-# It runs on the devNuc runner, where the Toy CLI is installed and logged in;
+# It runs on the devNuc runner (the org has others), where the Toy CLI is installed and logged in;
 # nothing from a pull request ever reaches this job.
 on:
   push:
@@ -20,7 +20,7 @@ concurrency: publish
 
 jobs:
   publish:
-    runs-on: [self-hosted, linux]
+    runs-on: [self-hosted, devNuc]
     timeout-minutes: 10
     env:
       TOY_ID: ${{ vars.TOY_ID }}
